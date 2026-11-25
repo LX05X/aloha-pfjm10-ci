@@ -1,0 +1,87 @@
+name: Build Aloha pfjm10
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: 'device directory under Platforms/KodiakPkg/Device'
+        default: oppo-pfjm10
+      build_type:
+        description: 'RELEASE or DEBUG'
+        default: RELEASE
+      ref:
+        description: 'mu_aloha_platforms git ref'
+        default: main
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout device overlay
+        uses: actions/checkout@v4
+
+      - name: Clone mu_aloha_platforms
+        run: |
+          set -euo pipefail
+          git clone --recursive --depth 1 --branch "${{ inputs.ref }}" \
+            https://github.com/Project-Aloha/mu_aloha_platforms.git workspace
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential uuid-dev nasm acpica-tools device-tree-compiler \
+            clang lld llvm gcc-aarch64-linux-gnu mono-devel \
+            python3 python3-venv python3-pip git ca-certificates
+
+      - name: Place device package
+        run: |
+          set -euo pipefail
+          cp -r "device/${{ inputs.device }}" "workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}"
+          ls "workspace/Platforms/KodiakPkg/Device/"
+
+      - name: Python requirements
+        working-directory: workspace
+        run: |
+          set -euo pipefail
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r pip-requirements.txt
+
+      - name: Environment setup and init
+        working-directory: workspace
+        env:
+          CLANGPDB_BIN: /usr/lib/llvm-18/bin
+          CLANGPDB_AARCH64_PREFIX: aarch64-linux-gnu-
+        run: |
+          set -euo pipefail
+          chmod +x build_setup.sh build_uefi.py || true
+          ./build_setup.sh || true
+          ./build_uefi.py --init 2>&1 | tail -40
+
+      - name: Build firmware
+        working-directory: workspace
+        env:
+          CLANGPDB_BIN: /usr/lib/llvm-18/bin
+          CLANGPDB_AARCH64_PREFIX: aarch64-linux-gnu-
+        run: |
+          set -o pipefail
+          ./build_uefi.py -d "${{ inputs.device }}" -t "${{ inputs.build_type }}" 2>&1 | tee build.log
+
+      - name: Collect outputs
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          cp -v workspace/build.log artifact/ 2>/dev/null || true
+          find workspace -maxdepth 6 \( -name '*.fd' -o -name '*.img' -o -name '*.elf' \) -size +100k 2>/dev/null | head -40 | tee artifact/files.txt
+          while read -r f; do cp -v "$f" artifact/ ; done < artifact/files.txt || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aloha-${{ inputs.device }}-${{ github.run_number }}
+          path: artifact
+          if-no-files-found: warn
+          retention-days: 14
