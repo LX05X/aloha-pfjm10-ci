@@ -17,4 +17,5 @@ gAndromedaPkgTokenSpaceGuid.PcdABLProduct|"OPPO-PFJM10"
 #gAndromedaPkgTokenSpaceGuid.PcdDisplayCallerStallBeforeEnable|0
 
 # Storage
-gAndromedaPkgTokenSpaceGuid.PcdStorageHasUFS3|0
+# upstream AndromedaPkg does not declare this PCD
+#gAndromedaPkgTokenSpaceGuid.PcdStorageHasUFS3|0
