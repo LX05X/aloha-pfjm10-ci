@@ -18,4 +18,4 @@ gAndromedaPkgTokenSpaceGuid.PcdABLProduct|"OPPO-PFJM10"
 
 # Storage
 # upstream AndromedaPkg does not declare this PCD
-#gAndromedaPkgTokenSpaceGuid.PcdStorageHasUFS3|0
+gAndromedaPkgTokenSpaceGuid.PcdStorageHasUFS3|0

@@ -10,7 +10,7 @@ on:
         description: 'RELEASE or DEBUG'
         default: RELEASE
       ref:
-        description: 'mu_aloha_platforms git ref'
+        description: 'mu_aloha_platforms commit or branch'
         default: main
 
 jobs:
@@ -24,8 +24,10 @@ jobs:
       - name: Clone mu_aloha_platforms
         run: |
           set -euo pipefail
-          git clone --recursive --depth 1 --branch "${{ inputs.ref }}" \
-            https://github.com/Project-Aloha/mu_aloha_platforms.git workspace
+          git clone https://github.com/Project-Aloha/mu_aloha_platforms.git workspace
+          cd workspace
+          git checkout "${{ inputs.ref }}"
+          git submodule update --init --recursive --depth 1
 
       - name: Install dependencies
         run: |
