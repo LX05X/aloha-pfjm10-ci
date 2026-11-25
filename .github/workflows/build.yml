@@ -9,6 +9,9 @@ on:
       build_type:
         description: 'RELEASE or DEBUG'
         default: RELEASE
+      secureboot:
+        description: '1 = secure boot platform (Kodiak.dsc), 0 = NoSb'
+        default: '0'
       ref:
         description: 'mu_aloha_platforms commit or branch'
         default: main
@@ -69,7 +72,7 @@ jobs:
           CLANGPDB_AARCH64_PREFIX: aarch64-linux-gnu-
         run: |
           set -o pipefail
-          ./build_uefi.py -d "${{ inputs.device }}" -t "${{ inputs.build_type }}" 2>&1 | tee build.log
+          ./build_uefi.py -d "${{ inputs.device }}" -t "${{ inputs.build_type }}" -s "${{ inputs.secureboot }}" 2>&1 | tee build.log
 
       - name: Collect outputs
         if: always()
