@@ -80,6 +80,10 @@ jobs:
           set -euo pipefail
           mkdir -p artifact
           cp -v workspace/build.log artifact/ 2>/dev/null || true
+          FD=$(find workspace -name 'SM7325_EFI.fd' | head -1 || true)
+          if [ -n "${FD:-}" ]; then
+            python tools/module_sizes.py "$FD" | tee artifact/module-sizes.txt
+          fi
           find workspace -maxdepth 6 \( -name '*.fd' -o -name '*.img' -o -name '*.elf' \) -size +100k 2>/dev/null | head -40 | tee artifact/files.txt
           while read -r f; do cp -v "$f" artifact/ ; done < artifact/files.txt || true
 
