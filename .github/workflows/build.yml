@@ -47,16 +47,6 @@ jobs:
           cp -r "device/${{ inputs.device }}" "workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}"
           ls "workspace/Platforms/KodiakPkg/Device/"
 
-      - name: Compile the device DSDT from source
-        run: |
-          set -euo pipefail
-          dir="workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}/ACPI"
-          if [ -f "$dir/DSDT.dsl" ]; then
-            cp "$dir/DSDT.aml" "$dir/DSDT.aml.prebuilt" 2>/dev/null || true
-            ( cd "$dir" && iasl -p DSDT DSDT.dsl > iasl.log 2>&1 || tail -20 iasl.log )
-            ls -l "$dir/DSDT.aml" || true
-          fi
-
       - name: Python requirements
         working-directory: workspace
         run: |
@@ -74,6 +64,23 @@ jobs:
           chmod +x build_setup.sh build_uefi.py || true
           ./build_setup.sh || true
           ./build_uefi.py --init 2>&1 | tail -40
+
+      - name: Compile the device DSDT with the Mu iasl
+        run: |
+          set -euo pipefail
+          dir="workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}/ACPI"
+          [ -f "$dir/DSDT.dsl" ] || exit 0
+          iasl=$(find workspace/MU_BASECORE/BaseTools/Bin -type f -name 'iasl' 2>/dev/null | head -1)
+          echo "iasl: ${iasl:-none}"
+          [ -n "$iasl" ] || exit 0
+          chmod +x "$iasl" || true
+          cp "$dir/DSDT.aml" "$dir/DSDT.prebuilt.aml"
+          if ( cd "$dir" && "$iasl" -p DSDT DSDT.dsl > iasl.log 2>&1 ); then
+            ls -l "$dir/DSDT.aml"
+          else
+            echo "iasl failed, keeping the prebuilt DSDT"; tail -20 "$dir/iasl.log" || true
+            cp "$dir/DSDT.prebuilt.aml" "$dir/DSDT.aml"
+          fi
 
       - name: Build firmware
         working-directory: workspace
