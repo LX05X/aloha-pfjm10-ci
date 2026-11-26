@@ -47,6 +47,16 @@ jobs:
           cp -r "device/${{ inputs.device }}" "workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}"
           ls "workspace/Platforms/KodiakPkg/Device/"
 
+      - name: Compile the device DSDT from source
+        run: |
+          set -euo pipefail
+          dir="workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}/ACPI"
+          if [ -f "$dir/DSDT.dsl" ]; then
+            cp "$dir/DSDT.aml" "$dir/DSDT.aml.prebuilt" 2>/dev/null || true
+            ( cd "$dir" && iasl -p DSDT DSDT.dsl > iasl.log 2>&1 || tail -20 iasl.log )
+            ls -l "$dir/DSDT.aml" || true
+          fi
+
       - name: Python requirements
         working-directory: workspace
         run: |
