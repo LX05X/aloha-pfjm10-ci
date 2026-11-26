@@ -70,7 +70,7 @@ jobs:
           set -euo pipefail
           dir="workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}/ACPI"
           [ -f "$dir/DSDT.dsl" ] || exit 0
-          iasl=$(find workspace/MU_BASECORE/BaseTools/Bin -type f -name 'iasl' 2>/dev/null | head -1)
+          iasl=$(find workspace/MU_BASECORE/BaseTools/Bin -type f -path '*Linux*' -name 'iasl' 2>/dev/null | head -1)
           echo "iasl: ${iasl:-none}"
           [ -n "$iasl" ] || exit 0
           chmod +x "$iasl" || true
