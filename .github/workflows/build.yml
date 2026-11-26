@@ -9,6 +9,9 @@ on:
       build_type:
         description: 'RELEASE or DEBUG'
         default: RELEASE
+      screen_serial:
+        description: 'USE_SCREEN_FOR_SERIAL_OUTPUT (0 or 1)'
+        default: '0'
       secureboot:
         description: '1 = secure boot platform (Kodiak.dsc), 0 = NoSb'
         default: '0'
@@ -48,6 +51,15 @@ jobs:
           set -euo pipefail
           cp -r "device/${{ inputs.device }}" "workspace/Platforms/KodiakPkg/Device/${{ inputs.device }}"
           ls "workspace/Platforms/KodiakPkg/Device/"
+
+      - name: Apply serial output switch
+        run: |
+          set -euo pipefail
+          for f in workspace/Platforms/KodiakPkg/Kodiak.dsc workspace/Platforms/KodiakPkg/KodiakNoSb.dsc; do
+            [ -f "$f" ] || continue
+            sed -i -E "s|^  USE_SCREEN_FOR_SERIAL_OUTPUT +=.*|  USE_SCREEN_FOR_SERIAL_OUTPUT    = ${{ inputs.screen_serial }}|" "$f"
+            grep -n 'USE_SCREEN_FOR_SERIAL_OUTPUT' "$f"
+          done
 
       - name: Python requirements
         working-directory: workspace
